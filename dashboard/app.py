@@ -68,7 +68,7 @@ def load_data():
 
     credit = pd.read_sql("""
         SELECT customer_id, credit_score, credit_utilization_ratio, num_late_payments_30d,
-               num_late_payments_90d, num_defaults_prior, num_open_accounts
+               num_late_payments_90d, num_defaults_prior, bankruptcies, num_open_accounts
         FROM credit_history
     """, engine)
     return loans, scored, credit
@@ -120,7 +120,8 @@ k4.metric("Disbursed value", f"₹{disbursed['approved_amount'].sum() / 1e7:,.1f
 k5.metric("High-risk customers", f"{(sc['risk_category'] == 'High Risk').sum():,}",
           help="Customers whose latest application scored 35 or more")
 
-overview, risk_tab, lookup = st.tabs(["Overview", "Portfolio risk", "Customer lookup"])
+# tab and customer are kept in the url so a view can be shared as a link
+overview, risk_tab, lookup = st.tabs(["Overview", "Portfolio risk", "Customer lookup"], key="tab", bind="query-params")
 
 # ================= OVERVIEW =================
 with overview:
@@ -306,7 +307,8 @@ with risk_tab:
 # ================= CUSTOMER LOOKUP =================
 with lookup:
     st.caption("Look up any scored customer to see their risk score and what drives it.")
-    cust = st.selectbox("Customer ID", sorted(scored["customer_id"]), index=None, placeholder="Type a customer ID")
+    cust = st.selectbox("Customer ID", sorted(scored["customer_id"]), index=None, placeholder="Type a customer ID",
+                        key="customer", bind="query-params")
 
     if cust:
         row = scored[scored["customer_id"] == cust].iloc[0]
@@ -316,17 +318,18 @@ with lookup:
         m1.metric("Risk score", int(row["risk_score"]))
         m2.metric("Risk category", row["risk_category"])
         m3.metric("Default probability", f"{row['default_probability']:.1%}")
-        m4.metric("Model flag", "Likely default" if row["predicted_default"] else "Likely repay")
+        m4.metric("Model says", "Default" if row["predicted_default"] else "Repay")
 
         with st.container(border=True):
             st.markdown(f"**Biggest factors pushing the score up:** {row['top_factors'].replace('_', ' ')}")
-            b = st.columns(6)
+            b = st.columns(7)
             b[0].metric("Credit score", int(bureau["credit_score"]))
             b[1].metric("Utilization", f"{bureau['credit_utilization_ratio']:.0%}")
             b[2].metric("Late 30d", int(bureau["num_late_payments_30d"]))
             b[3].metric("Late 90d", int(bureau["num_late_payments_90d"]))
             b[4].metric("Prior defaults", int(bureau["num_defaults_prior"]))
-            b[5].metric("Open accounts", int(bureau["num_open_accounts"]))
+            b[5].metric("Bankruptcies", int(bureau["bankruptcies"]))
+            b[6].metric("Accounts", int(bureau["num_open_accounts"]))
 
         st.markdown(f"**Applications** (score is based on the latest one, {row['application_id']})")
         history = loans[loans["customer_id"] == cust].sort_values("application_date", ascending=False)
@@ -335,9 +338,9 @@ with lookup:
                      hide_index=True, width="stretch", column_config={
                          "application_id": "Application", "loan_type": "Loan type",
                          "application_date": st.column_config.DateColumn("Date"),
-                         "requested_amount": st.column_config.NumberColumn("Requested (₹)", format="%d"),
+                         "requested_amount": st.column_config.NumberColumn("Requested (₹)", format="localized"),
                          "debt_to_income_ratio": st.column_config.NumberColumn("DTI", format="%.2f"),
                          "approval_status": "Status",
-                         "approved_amount": st.column_config.NumberColumn("Approved (₹)", format="%d"),
+                         "approved_amount": st.column_config.NumberColumn("Approved (₹)", format="localized"),
                          "loan_default": st.column_config.NumberColumn("Defaulted", format="%d"),
                      })
