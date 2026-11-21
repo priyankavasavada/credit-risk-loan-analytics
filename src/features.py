@@ -8,10 +8,10 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 engine = create_engine("postgresql+psycopg2:///credit_risk")
 
 num_cols = [
-    "age", "dependents", "years_at_residence", "annual_income", "tenure_years",
+    "age_at_application", "dependents", "years_at_residence", "annual_income", "tenure_years",
     "credit_score", "num_open_accounts", "num_credit_inquiries_6m", "credit_utilization_ratio",
     "num_late_payments_30d", "num_late_payments_90d", "num_defaults_prior", "bankruptcies",
-    "oldest_account_age_months", "debt_to_limit",
+    "oldest_account_age_months",
     "requested_amount", "loan_term_months", "interest_rate", "debt_to_income_ratio",
     "loan_to_income", "collateral_flag",
     "total_inflow", "total_outflow", "net_cash_flow", "emi_outflow", "avg_balance",
@@ -46,9 +46,11 @@ def get_data():
 
     df = loans.merge(customers, on="customer_id").merge(credit, on="customer_id").merge(txn, on="customer_id")
 
-    days = pd.to_datetime(df["application_date"]) - pd.to_datetime(df["customer_since"])
-    df["tenure_years"] = (days.dt.days / 365).clip(lower=0)  # some loans are dated before customer_since
-    df["debt_to_limit"] = df["total_outstanding_debt"] / df["total_credit_limit"]
+    app_date = pd.to_datetime(df["application_date"])
+    # age column is as of today, we want it at the time of the application
+    df["age_at_application"] = (app_date - pd.to_datetime(df["date_of_birth"])).dt.days // 365
+    # some loans are dated before customer_since, those get 0
+    df["tenure_years"] = ((app_date - pd.to_datetime(df["customer_since"])).dt.days / 365).clip(lower=0)
     df["loan_to_income"] = df["requested_amount"] / df["annual_income"]
     df[cat_cols] = df[cat_cols].fillna("Unknown")
 
