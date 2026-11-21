@@ -1,0 +1,5 @@
+,threshold,accuracy,precision,recall,f1,roc_auc
+logistic_regression,0.22,0.661,0.38,0.706,0.494,0.739
+decision_tree,0.22,0.634,0.36,0.73,0.483,0.709
+random_forest,0.24,0.664,0.382,0.705,0.496,0.727
+xgboost,0.23,0.672,0.389,0.702,0.501,0.732
