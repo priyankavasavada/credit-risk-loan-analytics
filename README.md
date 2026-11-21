@@ -14,9 +14,27 @@ pip install -r requirements.txt
 Put the four CSVs (`customers.csv`, `credit_history.csv`, `loan_applications.csv`, `transactions.csv`) in `datasets/`.
 They aren't committed since they contain personal details.
 
+## Running it
+
+Needs a postgres database called `credit_risk` (`createdb credit_risk`). On a Mac xgboost also needs `brew install libomp`.
+
+```bash
+python src/data_load.py    # create tables + load csvs
+python src/train.py        # train and compare models, saves models/default_model.pkl
+python src/risk_score.py   # scores customers into the scored_customers table
+```
+
+Notebooks in `notebooks/` go in order 00 to 04.
+
+## Results
+
+Logistic Regression ended up the best model: ROC-AUC 0.74 in cross validation, 0.71 on the test set,
+catching ~66-70% of defaulters. Details in `models/model_card.md`.
+
 ## Structure
 
 - `sql/` - schema and analysis queries
 - `src/` - python scripts
-- `notebooks/` - EDA and modelling notebooks
+- `notebooks/` - cleaning, EDA, features, modelling, risk scoring
+- `models/` - saved model, results, feature importance, model card
 - `documentation/` - PRD
