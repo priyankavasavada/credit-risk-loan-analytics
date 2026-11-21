@@ -6,3 +6,6 @@ __pycache__/
 
 # raw data has customer names/emails/phones, keep it local
 datasets/*.csv
+
+# internship brief, not for the public repo
+documentation/PRD.docx
