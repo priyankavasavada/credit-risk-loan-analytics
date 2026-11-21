@@ -76,7 +76,7 @@ SELECT
     loan_type,
     COUNT(*)                                        AS applications,
     ROUND(MIN(requested_amount),0)                  AS min_amount,
-    ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY requested_amount),0) AS median_amount,
+    ROUND((PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY requested_amount))::numeric,0) AS median_amount,
     ROUND(AVG(requested_amount),0)                  AS avg_amount,
     ROUND(MAX(requested_amount),0)                  AS max_amount
 FROM loan_applications
